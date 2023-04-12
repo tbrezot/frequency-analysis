@@ -104,7 +104,7 @@ def draw_k_snN(s, n):
     # Build the axis values.
     adim_N = [N for N in range(1, adim_N_max)]
     s_2 = s**2
-    k_s = [0.5 * (s + math.sqrt(s_2 + 4 * (n * adim_N) * C_sn) / n)
+    k_s = [(s + math.sqrt(s_2 + 4 * (n * adim_N) * C_sn)) / (2 * n)
            for adim_N in range(1, adim_N_max)]
 
     if plot_fig:
@@ -195,11 +195,11 @@ def main():
     # Cardinal of the universe (nb of words indexed).
     n = 1_000
 
-    # Number of called to the index.
-    N = 2 * n
-
     # Draw the graph of `k_snN`.
     draw_k_snN(s, n)
+
+    # Number of called to the index.
+    N = 150 * n
 
     # Draw the theoretical and empirical curves.
     draw_curve(s, n, N)
