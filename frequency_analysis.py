@@ -1,48 +1,6 @@
 import math
-import random
 import matplotlib.pyplot as plt
-from numpy import infty
-
-
-def build_zipf(n):
-    """
-    Computes the theoretical Zipf distribution with `n` elements.
-    """
-
-    C_n = sum([1/(n + 1) for n in range(n)])
-    zipf = [1/((i + 1) * C_n) for i in range(n)]
-
-    # The distribution is already normalized.
-    return zipf
-
-
-def generate_noisy_data(distr, N):
-    """
-    Draws N samples of data following the given distribution.
-
-    **Note**: a distribution is the list of the normalized probabilities for
-    each element in the universe.
-    """
-
-    # Build the cumulative distribution.
-    cumulative_distr = [distr[0]]
-    for i in range(1, len(distr)):
-        cumulative_distr.append(distr[i] + cumulative_distr[i-1])
-
-    # Randomly draw `N` samples from the Zipf.
-    data = [0 for _ in cumulative_distr]
-    for _ in range(N):
-        x = random.random()
-        for (i, cumulative_freq) in enumerate(cumulative_distr):
-            if x <= cumulative_freq:
-                data[i] += 1
-                break
-
-    # Normalize the sampled distribution.
-    area = sum(data)
-    res = [f/area for f in data]
-
-    return sorted(res, reverse=True)
+import distribution as distr
 
 
 def compute_zipf_k_snN(s, n, N):
@@ -56,7 +14,7 @@ def compute_zipf_k_snN(s, n, N):
             N (f_i - f_{i + s}) = 1
         <=> i**2 + s * i - C_nN = 0
         <=> i = root_1 or root_2, root_1 < root_2
-            and root_{1,2} = (s +/- sqrt(s**2 + 4C_nN)) / 2
+            and root_{1,2} = (s +/- sqrt(s**2 + 4 * s * C_nN)) / 2
         ```
 
     where `N` is the number of samples drawn and `f_i` is the theoretical
@@ -117,8 +75,8 @@ def draw_k_snN(s, n):
 
 
 def draw_curve(s, n, N):
-    zipf = build_zipf(n)
-    data = generate_noisy_data(zipf, N)
+    zipf = distr.zipf(n)
+    data = distr.sample_distr(zipf, N)
 
     k_snN_th = compute_zipf_k_snN(s, n, N)
     k_snN_emp = get_last_unsafe_index(data, s, N)
@@ -142,49 +100,16 @@ def draw_curve(s, n, N):
         plt.title("Zipf distribution analysis (s={}, n={}, N={})".format(s, n, N))
         plt.show()
 
-
-def make_a_guess(distr, sampled_distr, guess, score, used_indices, res):
-    """
-    Make a guess on the distribution that has not been done before and compute
-    its score as follows:
-        `score = sqrt(sum([distr[i] - guess[i]]))`
-    """
-
-    for i in range(len(sampled_distr)):
-        if i not in used_indices:
-            new_guess = guess.copy()
-            new_guess.append(i)
-
-            new_used_indices = used_indices.copy()
-            new_used_indices.add(i)
-
-            score += (sampled_distr[i] - distr[len(guess) + 1])**2
-
-            if len(new_guess) == len(sampled_distr):
-                res.append((new_guess, math.sqrt(score)))
-            elif len(new_guess) < len(sampled_distr):
-                make_a_guess(distr, sampled_distr, new_guess,
-                             score, new_used_indices, res)
-
-
-def compute_best_guess(distr, sampled_distr, s, N):
-    k_snN = get_last_unsafe_index(sampled_distr, s, N)
-    print("k_snN =", k_snN)
-
-    res = []
-    make_a_guess(distr, sampled_distr[:k_snN], [], 0, set(), res)
-    assert len(res), math.factorial(k_snN)
-
-    best_guess = []
-    best_score = infty
-    for (guess, score) in res:
-        if score < best_score:
-            best_score = score
-            best_guess = guess
-    print("Best score found is:", best_score)
-    for (i, j) in enumerate(best_guess):
-        print("{} -> {} ({} vs {})".format(i, j, sampled_distr[j], distr[i]))
-    return best_guess, best_score
+        plt.vlines([k_snN_th/n], 0, max(data[0], zipf[0]), linestyles='dotted')
+        x = [(i + 1) / n for i in range(n)]
+        plt.plot(x, sorted(data, reverse=True), "x")
+        plt.ylabel("frequency (f_k)")
+        plt.xlabel("normalized keyword index (k/n)")
+        plt.title(
+            "Sorted samples from the Zipf distribution (s={}, n={}, N={})".format(s, n, N))
+        plt.legend(["last safe keyword (theoretical), k = {}".format(k_snN_th),
+                    "distribution of the index requests (sorted by frequency)"])
+        plt.show()
 
 
 def main():
@@ -199,14 +124,10 @@ def main():
     draw_k_snN(s, n)
 
     # Number of called to the index.
-    N = 150 * n
+    N = 2 * n
 
     # Draw the theoretical and empirical curves.
     draw_curve(s, n, N)
-
-    # zipf = build_zipf(n)
-    # data = generate_noisy_data(zipf, N)
-    # compute_best_guess(zipf, data, s, N)
 
 
 if __name__ == "__main__":
