@@ -40,7 +40,7 @@ def compute_ideal_chain_table_storage(indexed_values):
     return sum([L_uid + L_enc + sum([v_ij for v_ij in v_i]) for v_i in indexed_values])
 
 
-def plot_padding_space(n, max_B):
+def plot_padding_cost(n, max_B):
     """
     Plots the normalized padding for the given `n` and different indexed
     volumes `V`. The repartition of the indexed volume among the indexed
@@ -74,6 +74,10 @@ def plot_padding_space(n, max_B):
 
 
 def get_first_secure_keyword(distr, V, B, s):
+    """
+    Computes the indice of the first keyword in the distribution that has been
+    drawn the same number of times as (s-1) others.
+    """
     i = 0
     for (i, f) in enumerate(distr[:len(distr) - (s - 1)]):
         if math.ceil(V * f / B) == math.ceil(V * distr[i + (s - 1)] / B):
@@ -81,9 +85,9 @@ def get_first_secure_keyword(distr, V, B, s):
     return i
 
 
-def plot_padded_distribution(distr, V, B, s):
+def plot_storage(distr, V, B, s):
     """
-    Plot the given distribution and its padded version. Normalize them for
+    Plots the given distribution and its padded version. Normalizes them for
     comparison purpose.
 
     Ars:
@@ -104,7 +108,10 @@ def plot_padded_distribution(distr, V, B, s):
     plt.show()
 
 
-def plot_secure_index(distr, V, B, s):
+def plot_first_secure_index_given_B(distr, V, s):
+    """
+    Plots the evolution of the first safe keyword given B.
+    """
 
     B_range = [B for B in range(1, 101)]
     k_safe_B = [get_first_secure_keyword(distr, V, B, s) for B in B_range]
@@ -114,6 +121,12 @@ def plot_secure_index(distr, V, B, s):
     plt.xlabel(f"B")
     plt.plot(B_range, [(len(distr) - y) / len(distr) for y in k_safe_B])
     plt.show()
+
+
+def plot_first_secure_index_given_V(distr, B, s):
+    """
+    Plots the evolution of the first safe keyword given V.
+    """
 
     V_range = [n * i for i in range(1, 1001)]
     k_safe_V = [get_first_secure_keyword(
@@ -131,9 +144,15 @@ if __name__ == "__main__":
     # Number of keywords indexed.
     n = 1_000
 
+    # The number of values indexed per keyword follows the Zipf distribution.
+    zipf = distr.zipf(n)
+
+    plot_storage(zipf, 10 * n, 6, 2)
+
+    plot_first_secure_index_given_B(zipf, 10 * n, 2)
+    plot_first_secure_index_given_V(zipf, 6, 2)
+
     # Maximum value for B
     max_B = 100
 
-    plot_padded_distribution(distr.zipf(n), 10 * n, 6, 2)
-    plot_secure_index(distr.zipf(n), 10 * n, 6, 2)
-    plot_padding_space(n, max_B)
+    plot_padding_cost(n, max_B)
