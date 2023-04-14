@@ -100,11 +100,19 @@ def plot_storage(distr, V, B, s):
     line_size = L_uid + L_enc + math.ceil(B/8) + B * (1 + L_b)
     padded_storage = [line_size * math.ceil(V * f / B) for f in distr]
 
+    k_safe = get_first_secure_keyword(distr, V, B, s) + 1
+    plt.vlines(k_safe, 0, 1)
+
     x = [(i + 1) for i in range(len(distr))]
-    plt.vlines(get_first_secure_keyword(distr, V, B, s) + 1, 0, 1)
-    plt.plot(x, [f / distr[0] for f in distr])
+    plt.plot(x, [f / distr[0] for f in distr], "x")
     plt.plot(x, [v_wi / padded_storage[0] for v_wi in padded_storage], "x")
-    plt.plot()
+
+    plt.title(
+        f"Comparison between theoretical and padded Chain Table storages (B={B}, V={V})")
+    plt.ylabel(f"normalized storage")
+    plt.xlabel(f"keyword")
+    plt.legend([f"first secure keyword (k={k_safe}, s={s})",
+               "theoretical storage", f"padded storage (B={B}, V={V})"])
     plt.show()
 
 
@@ -117,9 +125,9 @@ def plot_first_secure_index_given_B(distr, V, s):
     k_safe_B = [get_first_secure_keyword(distr, V, B, s) for B in B_range]
 
     plt.title(f"Secure portion of the index given B (s={s}, n={n}, V={V})")
-    plt.ylabel(f"normalized indice of the first secure keyword (k/n)")
+    plt.ylabel(f"secure portion of the index ((n - k)/n)")
     plt.xlabel(f"B")
-    plt.plot(B_range, [(len(distr) - y) / len(distr) for y in k_safe_B])
+    plt.plot(B_range, [(len(distr) - y) / len(distr) for y in k_safe_B], "x")
     plt.show()
 
 
@@ -128,15 +136,15 @@ def plot_first_secure_index_given_V(distr, B, s):
     Plots the evolution of the first safe keyword given V.
     """
 
-    V_range = [n * i for i in range(1, 1001)]
-    k_safe_V = [get_first_secure_keyword(
-        distr, i * len(distr), B, s) for i in V_range]
+    V_range = [len(distr) * i for i in range(1, 1001)]
+    k_safe_V = [get_first_secure_keyword(distr, V, B, s) for V in V_range]
 
     plt.title(f"Secure portion of the index given V (s={s}, n={n}, B={B})")
-    plt.ylabel(f"normalized indice of the first secure keyword (k/n)")
+    plt.ylabel(f"secure portion of the index ((n - k)/n)")
     plt.xlabel(f"V/n")
     plt.plot([x / len(distr) for x in V_range],
-             [(len(distr) - y) / len(distr) for y in k_safe_V])
+             [(len(distr) - y) / len(distr) for y in k_safe_V],
+             "x")
     plt.show()
 
 
