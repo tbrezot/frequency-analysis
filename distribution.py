@@ -37,7 +37,6 @@ def sample_distr(distr, N):
                 break
 
     # Normalize the sampled distribution.
-    area = sum(data)
-    res = [f/area for f in data]
+    res = [f/N for f in data]
 
     return res
